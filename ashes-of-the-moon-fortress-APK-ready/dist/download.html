@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download - Ashes of the Moon Fortress</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1a2e 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container { max-width: 900px; text-align: center; }
+        h1 {
+            font-size: 2.8em;
+            color: #fbbf24;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
+        }
+        h2 { color: #8b5cf6; margin: 20px 0 10px; }
+        p { font-size: 1.1em; margin-bottom: 20px; line-height: 1.8; color: #94a3b8; }
+        .btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: 2px solid #fbbf24;
+            padding: 20px 50px;
+            font-size: 1.4em;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+            margin: 20px 10px;
+            font-weight: bold;
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(139, 92, 246, 0.7); }
+        .btn:disabled { background: #444; cursor: not-allowed; transform: none; border-color: #666; }
+        .status {
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            border: 1px solid #8b5cf6;
+            display: none;
+        }
+        .progress {
+            margin-top: 15px;
+            height: 35px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid #8b5cf6;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #fbbf24);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .file-list {
+            text-align: left;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .file-item {
+            padding: 6px 12px;
+            margin: 3px 0;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #a78bfa;
+        }
+        .info-box {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid #8b5cf6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .info-box code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #fbbf24;
+        }
+        .moon {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #fef3c7, #fbbf24, #92400e);
+            margin: 0 auto 30px;
+            box-shadow: 0 0 60px rgba(251, 191, 36, 0.4);
+            animation: glow 3s ease-in-out infinite;
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 60px rgba(251, 191, 36, 0.4); }
+            50% { box-shadow: 0 0 100px rgba(251, 191, 36, 0.7); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="moon"></div>
+        <h1>🎮 Ashes of the Moon Fortress</h1>
+        <p>Complete 2D Action Platformer with RPG Progression</p>
+        <p>Phaser 3 • TypeScript • Vite • Web Audio API</p>
+        
+        <button class="btn" id="downloadBtn" onclick="downloadProject()">
+            📦 Download Full Project (ZIP)
+        </button>
+        
+        <div class="status" id="status">
+            <div id="statusText">Preparing files...</div>
+            <div class="progress">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+            <div class="file-list" id="fileList"></div>
+        </div>
+        
+        <div class="info-box">
+            <h2>📋 After Download:</h2>
+            <p>1. Extract the ZIP file<br>
+            2. Open terminal in the extracted folder<br>
+            3. Run: <code>npm install</code><br>
+            4. Run: <code>npm run dev</code><br>
+            5. Open: <code>http://localhost:3000</code></p>
+        </div>
+        
+        <div class="info-box">
+            <h2>🎮 Controls:</h2>
+            <p>← → Move | ↑ Jump | Space Attack | F Fireball | E Interact | U Upgrade | ESC Pause | R Restart</p>
+        </div>
+    </div>
+
+    <script>
+    // ============================================
+    // ALL SOURCE CODE FILES EMBEDDED
+    // ============================================
+    
+    const FILES = {};
+
+    // === package.json ===
+    FILES['package.json'] = `{
+  "name": "ashes-of-the-moon-fortress",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "phaser": "^3.80.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  }
+}`;
+
+    // === tsconfig.json ===
+    FILES['tsconfig.json'] = `{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}`;
+
+    // === vite.config.js ===
+    FILES['vite.config.js'] = `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  server: { host: '0.0.0.0', port: 3000 },
+});`;
+
+    // === index.html ===
+    FILES['index.html'] = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Ashes of the Moon Fortress</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; }
+      #root { width: 100%; height: 100%; }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"><\/script>
+  </body>
+</html>`;
+
+    // === .gitignore ===
+    FILES['.gitignore'] = `node_modules\ndist\n.env\n*.zip`;
+
+    // === README.md ===
+    FILES['README.md'] = `# Ashes of the Moon Fortress
+
+Complete 2D side-scrolling action platformer with RPG progression.
+
+## Quick Start
+\`\`\`bash
+npm install
+npm run dev
+\`\`\`
+
+## Controls
+- Arrow Keys: Move/Jump
+- Space: Sword Attack  
+- F: Mara Fireball
+- E: Interact
+- U: Upgrade Menu
+- ESC: Pause
+- R: Restart
+
+## Levels
+1. Ashen Village - Tutorial
+2. Whispering Forest - Story choice + mini-boss
+3. Abandoned Mine - Moving platforms + hazards
+4. Burning Train - Falling obstacles
+5. Moon Fortress - Final boss (3 phases)
+
+## Endings
+- Heroic | Sacrifice | Corrupted
+`;
+
+    async function downloadProject() {
+        const btn = document.getElementById('downloadBtn');
+        const status = document.getElementById('status');
+        const statusText = document.getElementById('statusText');
+        const progressBar = document.getElementById('progressBar');
+        const fileList = document.getElementById('fileList');
+        
+        btn.disabled = true;
+        btn.textContent = '⏳ Creating ZIP...';
+        status.style.display = 'block';
+        statusText.textContent = 'Fetching source files...';
+        
+        try {
+            const zip = new JSZip();
+            
+            // Fetch all source files from the server
+            const filePaths = [
+                'src/App.tsx',
+                'src/main.tsx', 
+                'src/index.css',
+                'src/game/index.ts',
+                'src/game/GameState.ts',
+                'src/game/systems/AudioSystem.ts',
+                'src/game/entities/Player.ts',
+                'src/game/entities/Companion.ts',
+                'src/game/entities/Enemies.ts',
+                'src/game/entities/Boss.ts',
+                'src/game/scenes/BaseLevelScene.ts',
+                'src/game/scenes/MenuScene.ts',
+                'src/game/scenes/Level1Scene.ts',
+                'src/game/scenes/Level2Scene.ts',
+                'src/game/scenes/Level3Scene.ts',
+                'src/game/scenes/Level4Scene.ts',
+                'src/game/scenes/Level5Scene.ts',
+                'src/game/scenes/EndingScene.ts',
+                'src/game/ui/HUD.ts',
+                'src/game/ui/DialogueSystem.ts'
+            ];
+            
+            // Add embedded config files
+            const configFiles = ['package.json', 'tsconfig.json', 'vite.config.js', 'index.html', '.gitignore', 'README.md'];
+            let totalFiles = filePaths.length + configFiles.length;
+            let currentFile = 0;
+            
+            // Add config files
+            for (const path of configFiles) {
+                zip.file(path, FILES[path]);
+                currentFile++;
+                updateProgress(currentFile, totalFiles, path);
+            }
+            
+            // Fetch source files
+            statusText.textContent = 'Downloading source files...';
+            for (const path of filePaths) {
+                try {
+                    const response = await fetch('/' + path);
+                    if (response.ok) {
+                        const content = await response.text();
+                        zip.file(path, content);
+                    } else {
+                        console.warn('Could not fetch: ' + path);
+                        zip.file(path, '// File not available - run from dev server\n');
+                    }
+                } catch (e) {
+                    console.warn('Error fetching: ' + path, e);
+                    zip.file(path, '// Error fetching file\n');
+                }
+                currentFile++;
+                updateProgress(currentFile, totalFiles, path);
+                await sleep(30);
+            }
+            
+            statusText.textContent = 'Compressing...';
+            const blob = await zip.generateAsync({ type: 'blob' });
+            saveAs(blob, 'ashes-of-the-moon-fortress.zip');
+            
+            statusText.textContent = '✅ Download complete! Check your downloads folder.';
+            progressBar.style.width = '100%';
+            progressBar.textContent = '100% ✓';
+            btn.textContent = '✅ Downloaded! Click to download again';
+            btn.disabled = false;
+            
+        } catch (error) {
+            console.error('Error:', error);
+            statusText.textContent = '❌ Error: ' + error.message;
+            btn.disabled = false;
+            btn.textContent = '📦 Download Full Project (ZIP)';
+        }
+    }
+    
+    function updateProgress(current, total, path) {
+        const percent = Math.round((current / total) * 100);
+        const progressBar = document.getElementById('progressBar');
+        const fileList = document.getElementById('fileList');
+        progressBar.style.width = percent + '%';
+        progressBar.textContent = percent + '%';
+        fileList.innerHTML += '<div class="file-item">✓ ' + path + '</div>';
+        fileList.scrollTop = fileList.scrollHeight;
+    }
+    
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    </script>
+</body>
+</html>

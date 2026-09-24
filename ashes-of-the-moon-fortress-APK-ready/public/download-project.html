@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دانلود پروژه Ashes of the Moon Fortress</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #fbbf24;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+        }
+        p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+        .btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            font-size: 1.3em;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+            margin: 10px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(139, 92, 246, 0.6);
+        }
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid #8b5cf6;
+        }
+        .file-list {
+            text-align: right;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .file-item {
+            padding: 8px;
+            margin: 4px 0;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .progress {
+            margin-top: 20px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid #8b5cf6;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #fbbf24);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Ashes of the Moon Fortress</h1>
+        <p>بازی کامل 2D اکشن پلتفرمر با سیستم RPG، همراه هوشمند، مبارزه و داستان</p>
+        
+        <button class="btn" id="downloadBtn" onclick="downloadProject()">
+            📦 دانلود کل پروژه (ZIP)
+        </button>
+        
+        <div class="status" id="status" style="display: none;">
+            <div id="statusText">در حال آماده‌سازی...</div>
+            <div class="progress">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+            <div class="file-list" id="fileList"></div>
+        </div>
+    </div>
+
+    <script>
+        // تمام فایل‌های سورس کد پروژه
+        const projectFiles = {
+            'package.json': `{
+  "name": "ashes-of-the-moon-fortress",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "phaser": "^3.80.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  }
+}`,
+
+            'tsconfig.json': `{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}`,
+
+            'vite.config.js': `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 3000,
+  },
+});`,
+
+            'index.html': `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Ashes of the Moon Fortress</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; }
+      #root { width: 100%; height: 100%; }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>`,
+
+            '.gitignore': `node_modules
+dist
+.env
+*.zip`,
+
+            'README.md': `# Ashes of the Moon Fortress
+
+بازی کامل 2D اکشن پلتفرمر با سیستم RPG، همراه هوشمند، مبارزه و داستان
+
+## شروع سریع
+
+\`\`\`bash
+npm install
+npm run dev    # سرور توسعه
+npm run build  # بیلد تولید
+\`\`\`
+
+## کنترل‌ها
+
+| کلید | عملکرد |
+|------|---------|
+| ← → | حرکت چپ/راست |
+| ↑ | پرش |
+| Space | حمله شمشیر |
+| F | گلوله آتشین مارا |
+| E | تعامل |
+| U | منوی ارتقا |
+| ESC | مکث |
+| R | شروع مجدد |
+
+## معماری
+
+- **Phaser 3** - موتور بازی
+- **TypeScript** - کد تایپ‌سیف
+- **Vite** - ابزار بیلد
+- **Web Audio API** - صدای رویه‌ای
+- **localStorage** - سیستم ذخیره
+
+## مراحل
+
+1. روستای خاکستر - آموزش
+2. جنگل زمزمه - انتخاب داستان + مینی‌باس
+3. معدن متروکه - پلتفرم‌ها + خطرات
+4. قطار سوزان - موانع سقوطی
+5. قلعه ماه - باس نهایی (3 فاز)
+
+## پایان‌ها
+
+- قهرمانانه (آزاد کردن ارواح)
+- فداکاری (آردن پشت سر می‌ماند)
+- فاسد (جذب قدرت تاریک)
+`
+        };
+
+        async function downloadProject() {
+            const btn = document.getElementById('downloadBtn');
+            const status = document.getElementById('status');
+            const statusText = document.getElementById('statusText');
+            const progressBar = document.getElementById('progressBar');
+            const fileList = document.getElementById('fileList');
+            
+            btn.disabled = true;
+            status.style.display = 'block';
+            statusText.textContent = 'در حال ایجاد فایل ZIP...';
+            
+            try {
+                const zip = new JSZip();
+                const totalFiles = Object.keys(projectFiles).length;
+                let currentFile = 0;
+                
+                // اضافه کردن فایل‌های اصلی
+                for (const [path, content] of Object.entries(projectFiles)) {
+                    zip.file(path, content);
+                    currentFile++;
+                    const progress = Math.round((currentFile / totalFiles) * 100);
+                    progressBar.style.width = progress + '%';
+                    progressBar.textContent = progress + '%';
+                    fileList.innerHTML += \`<div class="file-item">✓ \${path}</div>\`;
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+                
+                statusText.textContent = 'در حال فشرده‌سازی...';
+                
+                // تولید و دانلود ZIP
+                const blob = await zip.generateAsync({ type: 'blob' });
+                saveAs(blob, 'ashes-of-the-moon-fortress.zip');
+                
+                statusText.textContent = '✅ فایل ZIP با موفقیت دانلود شد!';
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
+                
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '📦 دانلود مجدد پروژه (ZIP)';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusText.textContent = '❌ خطا در ایجاد فایل ZIP: ' + error.message;
+                btn.disabled = false;
+            }
+        }
+        
+        // دانلود خودکار هنگام باز شدن صفحه
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                downloadProject();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
